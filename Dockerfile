@@ -5,14 +5,22 @@
 
 FROM alpine
 
-MAINTAINER zero zero@gmail.com
+MAINTAINER zero 504715341@qq.com
 
 RUN apk --no-cache add \
-        libressl \
+        openssh \
         lftp \
         bash
 
 ADD main.sh /bin/
 RUN chmod +x /bin/main.sh
+
+ENV LFTP_MODEL=sftp \
+    LFTP_PORT=22 \
+    LFTP_SOURCE=/ \
+    LFTP_TARGET=/ \
+    LFTP_EXCLUDE="" \
+    LFTP_INCLUDE="" \
+    LFTP_DEBUG=false
 
 ENTRYPOINT /bin/main.sh

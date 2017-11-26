@@ -1,45 +1,59 @@
-#!/bin/sh
+#!/bin/bash
 
-if [ -z "$SFTP_HOST" ]; then
+# 检查环境变量
+if [ -z "$LFTP_HOST" ]; then
     echo "Need to set host"
     exit 1
 fi
-
-
-if [ -z "$SFTP_PORT" ]; then
-    SFTP_PORT="21"
-fi
-
-if [ -z "$SFTP_USERNAME" ]; then
+if [ -z "$LFTP_USERNAME" ]; then
     echo "Need to set username"
     exit 1
 fi
-
-if [ -z "$SFTP_SECURE" ]; then
-    SFTP_SECURE="true"
+if [ -z "$LFTP_SECURE" ]; then
+    LFTP_SECURE="true"
 fi
+echo "set ftp:passive-mode off" > /etc/lftp.conf
+echo "set ftp:charset utf8" > /etc/lftp.conf
+echo "set net:timeout 10" > /etc/lftp.conf
+echo "set pget:default-n 5" > /etc/lftp.conf
+echo "set sftp:auto-confirm yes" > /etc/lftp.conf
+# set net:max-retries 2;
+# set net:reconnect-interval-base 5; \
+# set net:reconnect-interval-multiplier 1; \
 
-if [ -z "$SFTP_DEST_DIR" ]; then
-    SFTP_DEST_DIR="/"
-fi
 
-if [ -z "$SFTP_SRC_DIR" ]; then
-    SFTP_SRC_DIR="/"
-fi
+# 提取源文件路径数组
+LFTP_EXCLUDE_STR=""
+LFTP_INCLUDE_STR=""
 
-SFTP_EXCLUDE_STR=""
-SFTP_INCLUDE_STR=""
-
-IFS=',' read -ra in_arr <<< "$SFTP_EXCLUDE"
+OLD_IFS="$IFS"
+IFS=","
+in_arr=($LFTP_EXCLUDE)
+IFS="$OLD_IFS"
 for i in "${in_arr[@]}"; do
-    SFTP_EXCLUDE_STR="$SFTP_EXCLUDE_STR -x $i"
+    LFTP_EXCLUDE_STR="$LFTP_EXCLUDE_STR -x $i"
 done
-IFS=',' read -ra in_arr <<< "$SFTP_INCLUDE"
-for i in "${in_arr[@]}"; do
-    SFTP_INCLUDE_STR="$SFTP_INCLUDE_STR -x $i"
-done
+if [ "$LFTP_DEBUG" = "true" ]; then
+    echo "exclude："${LFTP_EXCLUDE_STR}
+fi
 
-lftp -c "open -u $SFTP_USERNAME,$SFTP_PASSWORD $SFTP_HOSTNAME:$SFTP_PORT; \
-set ftp:ssl-force $SFTP_SECURE; \
-set ftp:ssl-protect-data $SFTP_SECURE; 
-mirror -R $SFTP_INCLUDE_STR $SFTP_EXCLUDE_STR $(pwd)$SFTP_SRC_DIR $SFTP_DEST_DIR"
+OLD_IFS="$IFS"
+IFS=","
+in_arr=($LFTP_INCLUDE)
+IFS="$OLD_IFS"
+for i in "${in_arr[@]}"; do
+    LFTP_INCLUDE_STR="$LFTP_INCLUDE_STR -x $i"
+done
+if [ "$LFTP_DEBUG" = "true" ]; then
+    echo "include："${LFTP_EXCLUDE_STR}
+fi
+
+# 开始上传文件
+echo "uploading..."
+CMD="lftp -u $LFTP_USERNAME,$LFTP_PASSWORD $LFTP_MODEL://$LFTP_HOST:$LFTP_PORT"
+if [ "$LFTP_DEBUG" = "true" ]; then
+    echo "cmd："${CMD}
+fi
+eval $CMD" -e 'mirror -R $(pwd)/$LFTP_SOURCE $LFTP_TARGET; exit;'"
+
+echo "All Done... See you next time."
