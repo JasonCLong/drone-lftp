@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# 记录执行开始时间
+start_time=$(date +%s%N)
+start_ms=${start_time:0:13}
+
 # 检查参数是否合法
 if [ -z "$LFTP_HOST" ]; then
     echo "Need to set host."
@@ -72,4 +76,9 @@ fi
 echo "uploading..."
 eval $CMD
 
-echo "All Done... See you next time."
+# 记录执行结束时间
+end_time=$(date +%s%N)
+end_ms=${end_time:0:16}
+
+echo "All Done..."
+echo "script use "$[end_ms - start_ms]" ms."
