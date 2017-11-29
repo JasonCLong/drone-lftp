@@ -1,6 +1,6 @@
 # drone-lftp
 
-drone插件，用于服务器间文件传输
+drone插件，用于服务器间文件传输。同步使用mirror命令，差量同步文件能以最少的流量快速传输文件
 
 ## Feature
 - [x] 同步本地文件夹到目标服务器
@@ -81,9 +81,13 @@ $ make docker
 
 ## 相关文献
 [drone官方插件demo](http://docs.drone.io/creating-custom-plugins-bash/)
+
 [lftp操作](http://fedoralog.blog.sohu.com/30894375.html)
+
 [基本操作](https://www.cnblogs.com/LJ-fish/archive/2010/03/15/1686607.html)
+
 [增量备份](http://www.169it.com/blog_article/766419848.html)
 
 [drone-scp](https://github.com/appleboy/drone-scp)
+
 [drone-ftps](https://github.com/christophschlosser/drone-ftps)
