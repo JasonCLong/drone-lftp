@@ -1,16 +1,21 @@
 #!/bin/bash
 
-# 检查环境变量
+# 检查参数是否合法
 if [ -z "$LFTP_HOST" ]; then
-    echo "Need to set host"
+    echo "Need to set host."
     exit 1
 fi
 if [ -z "$LFTP_USERNAME" ]; then
-    echo "Need to set username"
+    echo "Need to set username."
     exit 1
 fi
 if [ -z "$LFTP_SECURE" ]; then
     LFTP_SECURE="true"
+fi
+# 检查目标路径，必须为绝对目录
+if [ ${LFTP_TARGET:0:1} != '/' ]; then
+    echo "Target path must be a absolute path."
+    exit 1
 fi
 echo "set ftp:passive-mode off" > /etc/lftp.conf
 echo "set ftp:charset utf8" > /etc/lftp.conf
@@ -22,10 +27,8 @@ echo "set sftp:auto-confirm yes" > /etc/lftp.conf
 # set net:reconnect-interval-multiplier 1; \
 
 
-# 提取源文件路径数组
+# 提取忽略上传的源文件路径数组,正则
 LFTP_EXCLUDE_STR=""
-LFTP_INCLUDE_STR=""
-
 OLD_IFS="$IFS"
 IFS=","
 in_arr=($LFTP_EXCLUDE)
@@ -37,6 +40,8 @@ if [ "$LFTP_DEBUG" = "true" ]; then
     echo "exclude："${LFTP_EXCLUDE_STR}
 fi
 
+# 提取需要上传的源文件路径数组，正则
+LFTP_INCLUDE_STR=""
 OLD_IFS="$IFS"
 IFS=","
 in_arr=($LFTP_INCLUDE)
@@ -48,12 +53,23 @@ if [ "$LFTP_DEBUG" = "true" ]; then
     echo "include："${LFTP_EXCLUDE_STR}
 fi
 
+# 检查源文件路径位置，区分相对路径和绝对路径
+P_SOURCE=""
+if [ ${LFTP_SOURCE:0:2} = './' ]; then
+P_SOURCE=$(pwd)/${LFTP_SOURCE#*./}
+elif [ ${LFTP_SOURCE:0:1} = '/' ]; then
+P_SOURCE=$LFTP_SOURCE
+else
+P_SOURCE=$(pwd)/$LFTP_SOURCE
+fi
+
 # 开始上传文件
-echo "uploading..."
-CMD="lftp -u $LFTP_USERNAME,$LFTP_PASSWORD $LFTP_MODEL://$LFTP_HOST:$LFTP_PORT"
+CMD="lftp -u $LFTP_USERNAME,$LFTP_PASSWORD $LFTP_MODEL://$LFTP_HOST:$LFTP_PORT -e 'mirror -R $P_SOURCE $LFTP_TARGET; exit;'"
 if [ "$LFTP_DEBUG" = "true" ]; then
+    echo "source："${P_SOURCE}
     echo "cmd："${CMD}
 fi
-eval $CMD" -e 'mirror -R $(pwd)/$LFTP_SOURCE $LFTP_TARGET; exit;'"
+echo "uploading..."
+eval $CMD
 
 echo "All Done... See you next time."
